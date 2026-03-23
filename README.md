@@ -492,4 +492,4 @@ This project is private and not licensed for public use.
 
 ---
 
-*Built with ❤️ using Flutter & ASP.NET Core*
+*Built with ❤️ using Mostafa Zahran*
