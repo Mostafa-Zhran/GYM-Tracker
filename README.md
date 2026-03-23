@@ -1,4 +1,4 @@
-# 🏋️ GYM COACH — Flutter App
+# 🏋️ GYM Tracker — Flutter App
 
 A full-stack gym coaching platform connecting **Coaches** and **Trainees** through a mobile-first Flutter app backed by an ASP.NET Core REST API.
 
@@ -30,7 +30,7 @@ A full-stack gym coaching platform connecting **Coaches** and **Trainees** throu
 
 The Flutter frontend communicates with a hosted ASP.NET Core Web API at:
 ```
-https://gymfluterapi.runasp.net
+https://gymfluterapi.runasp.net/swagger/index.html
 ```
 
 ---
@@ -69,7 +69,7 @@ https://gymfluterapi.runasp.net
 | `flutter_launcher_icons` | ^0.13.1 | App icon generation |
 
 ### Backend — ASP.NET Core
-- REST API hosted at `https://gymfluterapi.runasp.net`
+- REST API hosted at `https://gymfluterapi.runasp.net/swagger/index.html`
 - JWT Bearer authentication
 - SignalR for real-time chat
 - Entity Framework Core
