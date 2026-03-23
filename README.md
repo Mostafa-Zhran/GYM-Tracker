@@ -3,27 +3,29 @@
 A full-stack gym coaching platform connecting **Coaches** and **Trainees** through a mobile-first Flutter app backed by an ASP.NET Core REST API.
 
 ---
-![GYM](https://github.com/user-attachments/assets/21c22924-5cb6-4c38-94a3-07b64db7e7a3)
+<img width="1408" height="581" alt="GYM" src="https://github.com/user-attachments/assets/3c42a5a2-fbac-47e4-a13b-8d20a9124057" />
 
 A full-stack gym tracker platform connecting Coaches and Trainees
 📥 Download APK • 🚀 Getting Started • 📖 API Docs 
 
-📥 Download
-Android APK (Latest Release)
+📥 **Download Now – GYM Tracker App** 💪
 
-Download the latest APK directly to your Android device:
-<img width="745" height="742" alt="logo2" src="https://github.com/user-attachments/assets/3df5203c-9690-4fa2-9eb8-af914cb075de" />
+Get the latest APK directly on your Android device and start your fitness journey today!
 
-Steps to install on Android:
-
-Click the button
-Download app-release.apk
-On your Android device → Settings → Security → Enable "Install from unknown sources"
-Open GYM COACH and register your account
+🔗 Download link:
 https://drive.google.com/file/d/1MxowRYXZpYTAwpV7CJeIZcV8nKeVLGPP/view?usp=sharing
 
+📱 **Steps to Install:**
 
-⚠️ iOS is not available as a direct download. Build from source using the instructions below.
+1. Click the download link above
+2. Download **app-release.apk**
+3. On your Android device:
+
+   * Go to **Settings → Security**
+   * Enable **Install from unknown sources**
+4. Open the app and register your account
+
+🚀 Start training smarter with **GYM Tracker**!
 
 ## 📋 Table of Contents
 
