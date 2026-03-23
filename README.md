@@ -4,11 +4,8 @@ A full-stack gym coaching platform connecting **Coaches** and **Trainees** throu
 
 ---
 <div align="center">
-Show Image
-Show Image
-Show Image
-Show Image
-Show Image
+  ![GYM](https://github.com/user-attachments/assets/5365870a-d009-4b9a-a9de-495cacf85679)
+
 A full-stack gym coaching platform connecting Coaches and Trainees
 📥 Download APK • 🚀 Getting Started • 📖 API Docs • 🗺️ Roadmap
 </div>
