@@ -488,7 +488,7 @@ flutter build web --release
 
 ## License
 
-This project is private and not licensed for public use.
+This project is public and not licensed for public use.
 
 ---
 
