@@ -3,6 +3,32 @@
 A full-stack gym coaching platform connecting **Coaches** and **Trainees** through a mobile-first Flutter app backed by an ASP.NET Core REST API.
 
 ---
+<div align="center">
+Show Image
+Show Image
+Show Image
+Show Image
+Show Image
+A full-stack gym coaching platform connecting Coaches and Trainees
+📥 Download APK • 🚀 Getting Started • 📖 API Docs • 🗺️ Roadmap
+</div>
+
+📥 Download
+Android APK (Latest Release)
+
+Download the latest APK directly to your Android device:
+
+Show Image
+Steps to install on Android:
+
+Click the button above or go to Releases
+Download app-release.apk
+On your Android device → Settings → Security → Enable "Install from unknown sources"
+Open the downloaded APK and tap Install
+Open GYM COACH and register your account
+
+
+⚠️ iOS is not available as a direct download. Build from source using the instructions below.
 
 ## 📋 Table of Contents
 
