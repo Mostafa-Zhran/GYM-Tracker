@@ -5,25 +5,22 @@ A full-stack gym coaching platform connecting **Coaches** and **Trainees** throu
 ---
 ![GYM](https://github.com/user-attachments/assets/21c22924-5cb6-4c38-94a3-07b64db7e7a3)
 
-<div align="center">
-
-A full-stack gym coaching platform connecting Coaches and Trainees
-📥 Download APK • 🚀 Getting Started • 📖 API Docs • 🗺️ Roadmap
-</div>
+A full-stack gym tracker platform connecting Coaches and Trainees
+📥 Download APK • 🚀 Getting Started • 📖 API Docs 
 
 📥 Download
 Android APK (Latest Release)
 
 Download the latest APK directly to your Android device:
+<img width="745" height="742" alt="logo2" src="https://github.com/user-attachments/assets/3df5203c-9690-4fa2-9eb8-af914cb075de" />
 
-Show Image
 Steps to install on Android:
 
-Click the button above or go to Releases
+Click the button
 Download app-release.apk
 On your Android device → Settings → Security → Enable "Install from unknown sources"
-Open the downloaded APK and tap Install
 Open GYM COACH and register your account
+https://drive.google.com/file/d/1MxowRYXZpYTAwpV7CJeIZcV8nKeVLGPP/view?usp=sharing
 
 
 ⚠️ iOS is not available as a direct download. Build from source using the instructions below.
