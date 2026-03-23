@@ -1,0 +1,14 @@
+D:\Sina Project\GymAPI\GymDAL\bin\Debug\net8.0\GymDAL.deps.json
+D:\Sina Project\GymAPI\GymDAL\bin\Debug\net8.0\GymDAL.dll
+D:\Sina Project\GymAPI\GymDAL\bin\Debug\net8.0\GymDAL.pdb
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.csproj.AssemblyReference.cache
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.GeneratedMSBuildEditorConfig.editorconfig
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.AssemblyInfoInputs.cache
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.AssemblyInfo.cs
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.csproj.CoreCompileInputs.cache
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.dll
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\refint\GymDAL.dll
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.pdb
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\ref\GymDAL.dll
+D:\Sina Project\GymAPI\GymDAL\bin\Debug\net8.0\GymDAL.runtimeconfig.json
+D:\Sina Project\GymAPI\GymDAL\obj\Debug\net8.0\GymDAL.genruntimeconfig.cache

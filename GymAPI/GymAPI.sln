@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36511.14 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GymAPI", "GymAPI\GymAPI.csproj", "{5216FD8E-78E9-406A-B83F-9AE48156793D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GymBLL", "GymBLL\GymBLL.csproj", "{0AD5D082-1CAD-4A5C-BA5F-0E4B96FD4D7F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GymDAL", "GymDAL\GymDAL.csproj", "{D09A97FC-8590-427A-AEFC-3EABEB8169F1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5216FD8E-78E9-406A-B83F-9AE48156793D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5216FD8E-78E9-406A-B83F-9AE48156793D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5216FD8E-78E9-406A-B83F-9AE48156793D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5216FD8E-78E9-406A-B83F-9AE48156793D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AD5D082-1CAD-4A5C-BA5F-0E4B96FD4D7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AD5D082-1CAD-4A5C-BA5F-0E4B96FD4D7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AD5D082-1CAD-4A5C-BA5F-0E4B96FD4D7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AD5D082-1CAD-4A5C-BA5F-0E4B96FD4D7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D09A97FC-8590-427A-AEFC-3EABEB8169F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D09A97FC-8590-427A-AEFC-3EABEB8169F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D09A97FC-8590-427A-AEFC-3EABEB8169F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D09A97FC-8590-427A-AEFC-3EABEB8169F1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {01312129-2FE8-4677-BEA3-3AF45DFECF16}
+	EndGlobalSection
+EndGlobal

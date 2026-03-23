@@ -1,0 +1,15 @@
+D:\Sina Project\GymAPI\GymBLL\bin\Release\net8.0\GymBLL.deps.json
+D:\Sina Project\GymAPI\GymBLL\bin\Release\net8.0\GymBLL.dll
+D:\Sina Project\GymAPI\GymBLL\bin\Release\net8.0\GymBLL.pdb
+D:\Sina Project\GymAPI\GymBLL\bin\Release\net8.0\GymDAL.dll
+D:\Sina Project\GymAPI\GymBLL\bin\Release\net8.0\GymDAL.pdb
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.csproj.AssemblyReference.cache
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.GeneratedMSBuildEditorConfig.editorconfig
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.AssemblyInfoInputs.cache
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.AssemblyInfo.cs
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.csproj.CoreCompileInputs.cache
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.csproj.Up2Date
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.dll
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\refint\GymBLL.dll
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\GymBLL.pdb
+D:\Sina Project\GymAPI\GymBLL\obj\Release\net8.0\ref\GymBLL.dll

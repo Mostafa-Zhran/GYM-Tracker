@@ -1,0 +1,89 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Sina Project\\GymAPI\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{5216FD8E-78E9-406A-B83F-9AE48156793D}|GymAPI\\GymAPI.csproj|d:\\sina project\\gymapi\\gymapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{5216FD8E-78E9-406A-B83F-9AE48156793D}|GymAPI\\GymAPI.csproj|solutionrelative:gymapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5216FD8E-78E9-406A-B83F-9AE48156793D}|GymAPI\\GymAPI.csproj|d:\\sina project\\gymapi\\gymapi\\controllers\\coachcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5216FD8E-78E9-406A-B83F-9AE48156793D}|GymAPI\\GymAPI.csproj|solutionrelative:gymapi\\controllers\\coachcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{5216FD8E-78E9-406A-B83F-9AE48156793D}|GymAPI\\GymAPI.csproj|d:\\sina project\\gymapi\\gymapi\\controllers\\account\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5216FD8E-78E9-406A-B83F-9AE48156793D}|GymAPI\\GymAPI.csproj|solutionrelative:gymapi\\controllers\\account\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0AD5D082-1CAD-4A5C-BA5F-0E4B96FD4D7F}|GymBLL\\GymBLL.csproj|d:\\sina project\\gymapi\\gymbll\\manager\\authintcation\\authintcationmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0AD5D082-1CAD-4A5C-BA5F-0E4B96FD4D7F}|GymBLL\\GymBLL.csproj|solutionrelative:gymbll\\manager\\authintcation\\authintcationmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CoachController.cs",
+              "DocumentMoniker": "D:\\Sina Project\\GymAPI\\GymAPI\\Controllers\\CoachController.cs",
+              "RelativeDocumentMoniker": "GymAPI\\Controllers\\CoachController.cs",
+              "ToolTip": "D:\\Sina Project\\GymAPI\\GymAPI\\Controllers\\CoachController.cs",
+              "RelativeToolTip": "GymAPI\\Controllers\\CoachController.cs",
+              "ViewState": "AgIAAJQAAAAAAAAAAAAowJoAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-21T13:27:26.102Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\Sina Project\\GymAPI\\GymAPI\\appsettings.json",
+              "RelativeDocumentMoniker": "GymAPI\\appsettings.json",
+              "ToolTip": "D:\\Sina Project\\GymAPI\\GymAPI\\appsettings.json*",
+              "RelativeToolTip": "GymAPI\\appsettings.json*",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-03-15T04:36:50.495Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AuthintcationManager.cs",
+              "DocumentMoniker": "D:\\Sina Project\\GymAPI\\GymBLL\\Manager\\Authintcation\\AuthintcationManager.cs",
+              "RelativeDocumentMoniker": "GymBLL\\Manager\\Authintcation\\AuthintcationManager.cs",
+              "ToolTip": "D:\\Sina Project\\GymAPI\\GymBLL\\Manager\\Authintcation\\AuthintcationManager.cs",
+              "RelativeToolTip": "GymBLL\\Manager\\Authintcation\\AuthintcationManager.cs",
+              "ViewState": "AgIAAHIAAAAAAAAAAAAswH0AAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-15T03:27:22.114Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "D:\\Sina Project\\GymAPI\\GymAPI\\Controllers\\Account\\AccountController.cs",
+              "RelativeDocumentMoniker": "GymAPI\\Controllers\\Account\\AccountController.cs",
+              "ToolTip": "D:\\Sina Project\\GymAPI\\GymAPI\\Controllers\\Account\\AccountController.cs",
+              "RelativeToolTip": "GymAPI\\Controllers\\Account\\AccountController.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAYwDsAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-15T03:27:11.86Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
