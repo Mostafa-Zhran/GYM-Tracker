@@ -3,8 +3,9 @@
 A full-stack gym coaching platform connecting **Coaches** and **Trainees** through a mobile-first Flutter app backed by an ASP.NET Core REST API.
 
 ---
+![GYM](https://github.com/user-attachments/assets/21c22924-5cb6-4c38-94a3-07b64db7e7a3)
+
 <div align="center">
-  ![GYM](https://github.com/user-attachments/assets/5365870a-d009-4b9a-a9de-495cacf85679)
 
 A full-stack gym coaching platform connecting Coaches and Trainees
 📥 Download APK • 🚀 Getting Started • 📖 API Docs • 🗺️ Roadmap
