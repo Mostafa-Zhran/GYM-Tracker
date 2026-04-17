@@ -5,6 +5,9 @@ import 'package:Gym/features/trainee/providers/trainee_provider.dart';
 import 'package:Gym/features/trainee/models/today_workout_model.dart';
 import 'package:Gym/core/navigation/app_router.dart';
 import 'package:Gym/features/auth/providers/auth_provider.dart';
+import 'package:Gym/features/chat/providers/unread_messages_provider.dart';
+import 'package:Gym/features/chat/widgets/notification_badge.dart';
+import 'package:Gym/features/chat/data/chat_repository.dart';
 
 class TodayWorkoutScreen extends ConsumerStatefulWidget {
   const TodayWorkoutScreen({super.key});
@@ -45,6 +48,35 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen>
 
     _fadeController.forward();
     _slideController.forward();
+    
+    // Initialize unread counts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeUnreadCounts();
+    });
+  }
+
+  Future<void> _initializeUnreadCounts() async {
+    final coachId = ref.read(authStateProvider).coachId;
+    if (coachId == null) return;
+    
+    final currentUserId = ref.read(authStateProvider).userId ?? '';
+    final chatRepository = ref.read(chatRepositoryProvider);
+    
+    try {
+      final messages = await chatRepository.getChatHistory(
+        otherUserId: coachId,
+        pageNumber: 1,
+        pageSize: 50,
+      );
+      
+      // Process messages to count unread
+      ref.read(unreadMessagesProvider.notifier).processMessages(
+        messages,
+        currentUserId,
+      );
+    } catch (e) {
+      print('Failed to fetch chat history for coach: $e');
+    }
   }
 
   @override
@@ -260,8 +292,22 @@ class _TopBar extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          _IconActionButton(
-              icon: Icons.chat_bubble_outline_rounded, onTap: onChat),
+          Consumer(
+            builder: (context, ref, child) {
+              final coachId = ref.watch(authStateProvider).coachId ?? '';
+              final unreadCount = ref
+                  .watch(unreadMessagesProvider)
+                  .getCount(coachId);
+              
+              return NotificationBadge(
+                count: unreadCount,
+                child: _IconActionButton(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  onTap: onChat,
+                ),
+              );
+            },
+          ),
           const SizedBox(width: 8),
           _IconActionButton(icon: Icons.logout_rounded, onTap: onLogout),
         ],

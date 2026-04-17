@@ -3,11 +3,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:Gym/core/constants/app_constants.dart';
 import 'package:Gym/core/network/dio_client.dart';
 import 'package:Gym/features/chat/models/chat_message_model.dart';
+import 'package:Gym/features/chat/providers/unread_messages_provider.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 final chatSignalRServiceProvider = Provider<ChatSignalRService>((ref) {
   final storage = ref.read(secureStorageProvider);
-  final service = ChatSignalRService(storage: storage);
+  final service = ChatSignalRService(storage: storage, ref: ref);
 
   // ✅ disconnect أوتوماتيك لما الـ provider يتمسح
   ref.onDispose(() {
@@ -19,6 +20,7 @@ final chatSignalRServiceProvider = Provider<ChatSignalRService>((ref) {
 
 class ChatSignalRService {
   final FlutterSecureStorage _storage;
+  final Ref _ref;
   HubConnection? _hubConnection;
 
   // ── Callbacks ─────────────────────────────────────────────────────────────
@@ -28,8 +30,9 @@ class ChatSignalRService {
   void Function()? onConnected;
   void Function()? onDisconnected;
 
-  ChatSignalRService({required FlutterSecureStorage storage})
-      : _storage = storage;
+  ChatSignalRService({required FlutterSecureStorage storage, required Ref ref})
+      : _storage = storage,
+        _ref = ref;
 
   bool get isConnected => _hubConnection?.state == HubConnectionState.Connected;
 
@@ -64,7 +67,14 @@ class ChatSignalRService {
       try {
         if (arguments == null || arguments.isEmpty) return;
         final raw = Map<String, dynamic>.from(arguments.first as Map);
-        onMessageReceived?.call(ChatMessageModel.fromJson(raw));
+        final message = ChatMessageModel.fromJson(raw);
+        
+        // Increment unread count for incoming unseen messages
+        if (!message.isSeen) {
+          _ref.read(unreadMessagesProvider.notifier).incrementUnread(message.senderId);
+        }
+        
+        onMessageReceived?.call(message);
       } catch (e) {
         print('ReceiveMessage parse error: $e');
       }

@@ -5,6 +5,9 @@ import 'package:Gym/features/coach/providers/coach_provider.dart';
 import 'package:Gym/features/coach/models/trainee_model.dart';
 import 'package:Gym/core/navigation/app_router.dart';
 import 'package:Gym/features/auth/providers/auth_provider.dart';
+import 'package:Gym/features/chat/providers/unread_messages_provider.dart';
+import 'package:Gym/features/chat/widgets/notification_badge.dart';
+import 'package:Gym/features/chat/data/chat_repository.dart';
 
 class TraineesListScreen extends ConsumerStatefulWidget {
   const TraineesListScreen({super.key});
@@ -40,6 +43,41 @@ class _TraineesListScreenState extends ConsumerState<TraineesListScreen>
 
     _fadeCtrl.forward();
     _slideCtrl.forward();
+    
+    // Initialize unread counts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeUnreadCounts();
+    });
+  }
+
+  Future<void> _initializeUnreadCounts() async {
+    final traineesAsync = ref.read(traineesProvider);
+    if (traineesAsync is! AsyncData) return;
+    
+    final trainees = traineesAsync.value;
+    if (trainees == null) return;
+    
+    final currentUserId = ref.read(authStateProvider).userId ?? '';
+    final chatRepository = ref.read(chatRepositoryProvider);
+    
+    for (final trainee in trainees) {
+      try {
+        final messages = await chatRepository.getChatHistory(
+          otherUserId: trainee.id,
+          pageNumber: 1,
+          pageSize: 50,
+        );
+        
+        // Process messages to count unread
+        ref.read(unreadMessagesProvider.notifier).processMessages(
+          messages,
+          currentUserId,
+        );
+      } catch (e) {
+        // Continue even if one fetch fails
+        print('Failed to fetch chat history for ${trainee.id}: $e');
+      }
+    }
   }
 
   @override
@@ -421,17 +459,28 @@ class _TraineeCard extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Chat button
-                _CardIconButton(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  tooltip: 'Chat',
-                  onTap: () => context.push(
-                    AppRoutes.chat,
-                    extra: ChatArgs(
-                      otherUserId: trainee.id,
-                      otherUserName: trainee.name,
-                    ),
-                  ),
+                // Chat button with notification badge
+                Consumer(
+                  builder: (context, ref, child) {
+                    final unreadCount = ref
+                        .watch(unreadMessagesProvider)
+                        .getCount(trainee.id);
+                    
+                    return NotificationBadge(
+                      count: unreadCount,
+                      child: _CardIconButton(
+                        icon: Icons.chat_bubble_outline_rounded,
+                        tooltip: 'Chat',
+                        onTap: () => context.push(
+                          AppRoutes.chat,
+                          extra: ChatArgs(
+                            otherUserId: trainee.id,
+                            otherUserName: trainee.name,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(width: 8),
                 // Assign workout button — orange accent

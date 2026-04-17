@@ -1,9 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../data/auth_repository.dart';
 import 'package:Gym/core/navigation/app_router.dart';
+import 'dart:math' as math;
+
+// ── Unified Animation System ─────────────────────────────────────────────────────
+// Motion hierarchy: Primary > Secondary > Micro
+class AppAnimation {
+  // Durations
+  static const Duration instant = Duration(milliseconds: 50);
+  static const Duration micro = Duration(milliseconds: 100);
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration medium = Duration(milliseconds: 250);
+  static const Duration slow = Duration(milliseconds: 400);
+  static const Duration verySlow = Duration(milliseconds: 600);
+
+  // Curves
+  static const Curve ease = Curves.ease;
+  static const Curve easeIn = Curves.easeIn;
+  static const Curve easeOut = Curves.easeOut;
+  static const Curve easeInOut = Curves.easeInOut;
+  static const Curve easeOutCubic = Curves.easeOutCubic;
+  static const Curve easeInOutCubic = Curves.easeInOutCubic;
+  static const Curve easeOutBack = Curves.easeOutBack;
+  static const Curve easeInOutBack = Curves.easeInOutBack;
+  static const Curve bounceIn = Curves.bounceIn;
+  static const Curve bounceOut = Curves.bounceOut;
+
+  // Animation hierarchy - static properties instead of nested classes
+  static const Duration primaryDuration = slow;
+  static const Curve primaryCurve = easeOutCubic;
+  
+  static const Duration secondaryDuration = medium;
+  static const Curve secondaryCurve = easeOutCubic;
+  
+  static const Duration microDuration = fast;
+  static const Curve microCurve = easeOut;
+}
 
 class GymRegisterPage extends ConsumerStatefulWidget {
   const GymRegisterPage({super.key});
@@ -48,20 +84,20 @@ class _GymRegisterPageState extends ConsumerState<GymRegisterPage>
   void initState() {
     super.initState();
     _fadeCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900));
+        vsync: this, duration: AppAnimation.primaryDuration);
     _slideCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 800));
+        vsync: this, duration: AppAnimation.secondaryDuration);
     _pulseCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1800))
+        vsync: this, duration: AppAnimation.verySlow)
       ..repeat(reverse: true);
 
-    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: AppAnimation.primaryCurve);
     _slideAnim = Tween<Offset>(
       begin: const Offset(0, 0.12),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideCtrl, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(parent: _slideCtrl, curve: AppAnimation.secondaryCurve));
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.06)
-        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+        .animate(CurvedAnimation(parent: _pulseCtrl, curve: AppAnimation.easeInOut));
 
     _fadeCtrl.forward();
     _slideCtrl.forward();
@@ -149,15 +185,16 @@ class _GymRegisterPageState extends ConsumerState<GymRegisterPage>
                         const SizedBox(height: 36),
 
                         // ── Username ────────────────────────────────
-                        const _FieldLabel('Username'),
-                        const SizedBox(height: 8),
                         _GymTextField(
                           controller: _userNameController,
+                          label: 'Username',
                           hint: 'e.g. john_smith',
                           icon: Icons.person_outline_rounded,
                           isFocused: _userNameFocused,
-                          onFocusChange: (v) =>
-                              setState(() => _userNameFocused = v),
+                          onFocusChange: (v) {
+                            setState(() => _userNameFocused = v);
+                            if (v) HapticFeedback.lightImpact();
+                          },
                           textInputAction: TextInputAction.next,
                           validator: (v) {
                             if (v == null || v.isEmpty) {
@@ -171,16 +208,17 @@ class _GymRegisterPageState extends ConsumerState<GymRegisterPage>
                         const SizedBox(height: 20),
 
                         // ── Email ────────────────────────────────────
-                        const _FieldLabel('Email Address'),
-                        const SizedBox(height: 8),
                         _GymTextField(
                           controller: _emailController,
+                          label: 'Email Address',
                           hint: 'you@example.com',
                           icon: Icons.alternate_email_rounded,
                           keyboardType: TextInputType.emailAddress,
                           isFocused: _emailFocused,
-                          onFocusChange: (v) =>
-                              setState(() => _emailFocused = v),
+                          onFocusChange: (v) {
+                            setState(() => _emailFocused = v);
+                            if (v) HapticFeedback.lightImpact();
+                          },
                           textInputAction: TextInputAction.next,
                           validator: (v) {
                             if (v == null || v.isEmpty) {
@@ -196,18 +234,18 @@ class _GymRegisterPageState extends ConsumerState<GymRegisterPage>
                         const SizedBox(height: 20),
 
                         // ── Password ─────────────────────────────────
-                        const _FieldLabel('Password'),
-                        const SizedBox(height: 8),
                         _GymTextField(
                           controller: _passwordController,
+                          label: 'Password',
                           hint: '••••••••',
                           icon: Icons.lock_outline_rounded,
                           obscureText: _obscurePassword,
                           isFocused: _passwordFocused,
-                          onFocusChange: (v) =>
-                              setState(() => _passwordFocused = v),
+                          onFocusChange: (v) {
+                            setState(() => _passwordFocused = v);
+                            if (v) HapticFeedback.lightImpact();
+                          },
                           textInputAction: TextInputAction.next,
-                          // ── FIX: update _passwordText so strength bar rebuilds
                           onChanged: (v) => setState(() => _passwordText = v),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -217,8 +255,10 @@ class _GymRegisterPageState extends ConsumerState<GymRegisterPage>
                               color: const Color(0xFF6B7280),
                               size: 20,
                             ),
-                            onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
+                            onPressed: () {
+                              setState(() => _obscurePassword = !_obscurePassword);
+                              HapticFeedback.lightImpact();
+                            },
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty) {
@@ -230,22 +270,22 @@ class _GymRegisterPageState extends ConsumerState<GymRegisterPage>
                         ),
 
                         const SizedBox(height: 10),
-                        // ── FIX: pass _passwordText (state) not controller.text
                         _PasswordStrengthHint(password: _passwordText),
 
                         const SizedBox(height: 20),
 
                         // ── Confirm Password ─────────────────────────
-                        const _FieldLabel('Confirm Password'),
-                        const SizedBox(height: 8),
                         _GymTextField(
                           controller: _confirmPassController,
+                          label: 'Confirm Password',
                           hint: '••••••••',
                           icon: Icons.lock_outline_rounded,
                           obscureText: _obscureConfirm,
                           isFocused: _confirmFocused,
-                          onFocusChange: (v) =>
-                              setState(() => _confirmFocused = v),
+                          onFocusChange: (v) {
+                            setState(() => _confirmFocused = v);
+                            if (v) HapticFeedback.lightImpact();
+                          },
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _handleRegister(),
                           suffixIcon: IconButton(
@@ -256,8 +296,10 @@ class _GymRegisterPageState extends ConsumerState<GymRegisterPage>
                               color: const Color(0xFF6B7280),
                               size: 20,
                             ),
-                            onPressed: () => setState(
-                                () => _obscureConfirm = !_obscureConfirm),
+                            onPressed: () {
+                              setState(() => _obscureConfirm = !_obscureConfirm);
+                              HapticFeedback.lightImpact();
+                            },
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty) {
@@ -499,33 +541,12 @@ class _Headline extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Field Label
+// Text Field — Advanced version with smart animations
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _FieldLabel extends StatelessWidget {
-  final String text;
-  const _FieldLabel(this.text, {super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        color: Color(0xFF6B7280),
-        fontSize: 11,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 1.4,
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Text Field — added onChanged parameter
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _GymTextField extends StatelessWidget {
+class _GymTextField extends StatefulWidget {
   final TextEditingController controller;
+  final String label;
   final String hint;
   final IconData icon;
   final bool isFocused;
@@ -534,12 +555,13 @@ class _GymTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
-  final ValueChanged<String>? onChanged; // ── FIX: added
+  final ValueChanged<String>? onChanged;
   final Widget? suffixIcon;
   final String? Function(String?)? validator;
 
   const _GymTextField({
     required this.controller,
+    required this.label,
     required this.hint,
     required this.icon,
     required this.isFocused,
@@ -554,69 +576,290 @@ class _GymTextField extends StatelessWidget {
   });
 
   @override
+  State<_GymTextField> createState() => _GymTextFieldState();
+}
+
+class _GymTextFieldState extends State<_GymTextField>
+    with SingleTickerProviderStateMixin {
+  bool _hasText = false;
+  String? _errorText;
+  late AnimationController _shakeController;
+  late Animation<double> _shakeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+    
+    // Shake animation for errors
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: AppAnimation.medium,
+    );
+    _shakeAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _shakeController, curve: AppAnimation.easeOutBack),
+    );
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final hasText = widget.controller.text.isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() => _hasText = hasText);
+    }
+    if (widget.onChanged != null) {
+      widget.onChanged!(widget.controller.text);
+    }
+    // Trigger shake when error appears
+    if (_errorText != null && hasText) {
+      _shakeController.forward().then((_) => _shakeController.reverse());
+    }
+  }
+
+  @override
+  void didUpdateWidget(_GymTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Trigger shake when error state changes
+    if (_errorText != null && oldWidget.isFocused && !widget.isFocused) {
+      _shakeController.forward().then((_) => _shakeController.reverse());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Focus(
-      onFocusChange: onFocusChange,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isFocused
-                ? const Color(0xFFFF6B35).withOpacity(0.7)
-                : const Color(0xFF1F2937),
-            width: isFocused ? 1.5 : 1,
-          ),
-          color: const Color(0xFF111827),
-          boxShadow: isFocused
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFFF6B35).withOpacity(0.08),
-                    blurRadius: 16,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : [],
-        ),
-        child: TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          onFieldSubmitted: onFieldSubmitted,
-          onChanged: onChanged, // ── FIX: wired up
-          validator: validator,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-          ),
-          cursorColor: const Color(0xFFFF6B35),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF374151), fontSize: 15),
-            prefixIcon: Padding(
-              padding: const EdgeInsets.only(left: 16, right: 12),
-              child: Icon(
-                icon,
-                color: isFocused
-                    ? const Color(0xFFFF6B35)
-                    : const Color(0xFF4B5563),
-                size: 20,
+    final hasError = _errorText != null;
+    final borderRadius = BorderRadius.circular(18);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Floating label with fluid animation
+        AnimatedOpacity(
+          duration: AppAnimation.microDuration,
+          curve: AppAnimation.microCurve,
+          opacity: widget.isFocused || _hasText ? 1.0 : 0.7,
+          child: Row(
+            children: [
+              Text(
+                widget.label.toUpperCase(),
+                style: TextStyle(
+                  color: widget.isFocused
+                      ? const Color(0xFFFF6B35)
+                      : hasError
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF6B7280),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.6,
+                ),
               ),
-            ),
-            prefixIconConstraints:
-                const BoxConstraints(minWidth: 48, minHeight: 48),
-            suffixIcon: suffixIcon,
-            border: InputBorder.none,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 0, vertical: 16),
-            errorStyle: const TextStyle(color: Color(0xFFEF4444), fontSize: 12),
-            errorBorder: InputBorder.none,
-            focusedErrorBorder: InputBorder.none,
+              if (widget.obscureText && _hasText) ...[
+                const SizedBox(width: 8),
+                // Typing indicator with color transition
+                AnimatedDefaultTextStyle(
+                  duration: AppAnimation.microDuration,
+                  curve: AppAnimation.microCurve,
+                  style: TextStyle(
+                    color: widget.controller.text.length >= 6
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFF6B7280),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  child: Text('${widget.controller.text.length}/6+'),
+                ),
+              ],
+            ],
           ),
         ),
-      ),
+        const SizedBox(height: 10),
+
+        // Shake animation wrapper
+        AnimatedBuilder(
+          animation: _shakeAnim,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(
+                math.sin(_shakeAnim.value * math.pi * 4) * 8 * (1 - _shakeAnim.value),
+                0,
+              ),
+              child: Focus(
+                onFocusChange: widget.onFocusChange,
+                child: AnimatedContainer(
+                  duration: AppAnimation.secondaryDuration,
+                  curve: AppAnimation.secondaryCurve,
+                  decoration: BoxDecoration(
+                    borderRadius: borderRadius,
+                    // Gradient border on focus
+                    gradient: widget.isFocused
+                        ? LinearGradient(
+                            colors: [
+                              const Color(0xFFFF6B35),
+                              const Color(0xFFFF3B30),
+                              const Color(0xFFFF6B35),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          )
+                        : null,
+                    // Solid border for non-focused state
+                    border: widget.isFocused
+                        ? null
+                        : Border.all(
+                            color: hasError
+                                ? const Color(0xFFEF4444).withOpacity(0.6)
+                                : const Color(0xFF1F2937),
+                            width: 1.5,
+                          ),
+                    // Enhanced shadows with glow effect
+                    boxShadow: widget.isFocused
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFFF6B35).withOpacity(0.15),
+                              blurRadius: 24,
+                              spreadRadius: 0,
+                            ),
+                            BoxShadow(
+                              color: const Color(0xFFFF6B35).withOpacity(0.08),
+                              blurRadius: 48,
+                              spreadRadius: -8,
+                            ),
+                          ]
+                        : hasError
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFFEF4444).withOpacity(0.15),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                  ),
+                  child: Container(
+                    // Inner container with padding for gradient border
+                    padding: widget.isFocused ? const EdgeInsets.all(2) : EdgeInsets.zero,
+                    decoration: BoxDecoration(
+                      borderRadius: borderRadius,
+                      color: const Color(0xFF111827),
+                    ),
+                    child: TextFormField(
+                      controller: widget.controller,
+                      obscureText: widget.obscureText,
+                      keyboardType: widget.keyboardType,
+                      textInputAction: widget.textInputAction,
+                      onFieldSubmitted: widget.onFieldSubmitted,
+                      validator: (value) {
+                        final result = widget.validator?.call(value);
+                        setState(() => _errorText = result);
+                        if (result != null) {
+                          _shakeController.forward().then((_) => _shakeController.reverse());
+                        }
+                        return result;
+                      },
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
+                      ),
+                      cursorColor: widget.isFocused
+                          ? const Color(0xFFFF6B35)
+                          : const Color(0xFF6B7280),
+                      cursorWidth: 2.5,
+                      cursorHeight: 20,
+                      decoration: InputDecoration(
+                        hintText: widget.hint,
+                        hintStyle: TextStyle(
+                          color: const Color(0xFF374151).withOpacity(0.8),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        // Enhanced icon container with animation
+                        prefixIcon: AnimatedContainer(
+                          duration: AppAnimation.microDuration,
+                          curve: AppAnimation.microCurve,
+                          margin: const EdgeInsets.only(left: 6, right: 8, top: 8, bottom: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: widget.isFocused
+                                ? const Color(0xFFFF6B35).withOpacity(0.12)
+                                : hasError
+                                    ? const Color(0xFFEF4444).withOpacity(0.1)
+                                    : const Color(0xFF1F2937).withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: widget.isFocused
+                                  ? const Color(0xFFFF6B35).withOpacity(0.3)
+                                  : Colors.transparent,
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            color: widget.isFocused
+                                ? const Color(0xFFFF6B35)
+                                : hasError
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF6B7280),
+                            size: 20,
+                          ),
+                        ),
+                        prefixIconConstraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Success validation icon with pulse
+                            if (_hasText && !hasError)
+                              TweenAnimationBuilder<double>(
+                                duration: AppAnimation.slow,
+                                tween: Tween(begin: 0.8, end: 1.2),
+                                builder: (context, scale, child) {
+                                  return Transform.scale(
+                                    scale: scale,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Icon(
+                                        Icons.check_circle_rounded,
+                                        color: const Color(0xFF10B981),
+                                        size: 20,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            if (widget.suffixIcon != null) widget.suffixIcon!,
+                          ],
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        errorStyle: const TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 12,
+                          height: 0,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -732,7 +975,7 @@ class _ErrorBanner extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Register Button
+// Register Button — Advanced interaction
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _RegisterButton extends StatefulWidget {
@@ -746,97 +989,143 @@ class _RegisterButton extends StatefulWidget {
 
 class _RegisterButtonState extends State<_RegisterButton>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _scale;
-  bool _pressed = false;
+  late final AnimationController _pressController;
+  late final Animation<double> _scaleAnim;
+  late final Animation<double> _shadowAnim;
+  late final Animation<double> _rippleAnim;
+  bool _isPressed = false;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1.0, end: 0.97)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _pressController = AnimationController(
+      vsync: this,
+      duration: AppAnimation.microDuration,
+    );
+    _scaleAnim = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _pressController, curve: AppAnimation.microCurve),
+    );
+    _shadowAnim = Tween<double>(begin: 1.0, end: 0.7).animate(
+      CurvedAnimation(parent: _pressController, curve: AppAnimation.microCurve),
+    );
+    _rippleAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pressController, curve: AppAnimation.easeOut),
+    );
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _pressController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return ScaleTransition(
-      scale: _scale,
+      scale: _scaleAnim,
       child: GestureDetector(
         onTapDown: (_) {
-          setState(() => _pressed = true);
-          _ctrl.forward();
+          setState(() => _isPressed = true);
+          _pressController.forward();
+          HapticFeedback.lightImpact();
         },
         onTapUp: (_) {
-          setState(() => _pressed = false);
-          _ctrl.reverse();
+          setState(() => _isPressed = false);
+          _pressController.reverse();
           if (!widget.isLoading) widget.onTap();
         },
         onTapCancel: () {
-          setState(() => _pressed = false);
-          _ctrl.reverse();
+          setState(() => _isPressed = false);
+          _pressController.reverse();
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: AppAnimation.secondaryDuration,
+          curve: AppAnimation.secondaryCurve,
           width: double.infinity,
-          height: 56,
+          height: 58,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: widget.isLoading
                   ? [
-                      const Color(0xFFFF6B35).withOpacity(0.5),
-                      const Color(0xFFFF3B30).withOpacity(0.5),
+                      const Color(0xFFFF6B35).withOpacity(0.6),
+                      const Color(0xFFFF3B30).withOpacity(0.6),
                     ]
                   : [
                       const Color(0xFFFF6B35),
                       const Color(0xFFFF3B30),
                     ],
             ),
-            boxShadow: _pressed || widget.isLoading
-                ? []
+            boxShadow: _isPressed || widget.isLoading
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFF6B35).withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
                 : [
                     BoxShadow(
-                      color: const Color(0xFFFF6B35).withOpacity(0.45),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
+                      color: const Color(0xFFFF6B35).withOpacity(0.5),
+                      blurRadius: 28,
+                      offset: const Offset(0, 12),
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFFF6B35).withOpacity(0.3),
+                      blurRadius: 48,
+                      offset: const Offset(0, 0),
                     ),
                   ],
           ),
-          child: Center(
-            child: widget.isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Colors.white),
-                  )
-                : const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.rocket_launch_rounded,
-                          color: Colors.white, size: 18),
-                      SizedBox(width: 10),
-                      Text(
-                        'CREATE ACCOUNT',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2.0,
+          child: Stack(
+            children: [
+              // Ripple effect
+              if (_isPressed)
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _rippleAnim,
+                    builder: (context, child) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          color: Colors.white.withOpacity(0.1 * (1 - _rippleAnim.value)),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
+                ),
+              // Button content
+              Center(
+                child: widget.isLoading
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.rocket_launch_rounded,
+                              color: Colors.white, size: 20),
+                          SizedBox(width: 12),
+                          Text(
+                            'CREATE ACCOUNT',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2.2,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ],
           ),
         ),
       ),

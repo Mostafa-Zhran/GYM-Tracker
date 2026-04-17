@@ -1,8 +1,44 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:Gym/features/auth/providers/auth_provider.dart';
 import 'package:Gym/core/navigation/app_router.dart';
+
+// ── Unified Animation System ─────────────────────────────────────────────────────
+// Motion hierarchy: Primary > Secondary > Micro
+class AppAnimation {
+  // Durations
+  static const Duration instant = Duration(milliseconds: 50);
+  static const Duration micro = Duration(milliseconds: 100);
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration medium = Duration(milliseconds: 250);
+  static const Duration slow = Duration(milliseconds: 400);
+  static const Duration verySlow = Duration(milliseconds: 600);
+
+  // Curves
+  static const Curve ease = Curves.ease;
+  static const Curve easeIn = Curves.easeIn;
+  static const Curve easeOut = Curves.easeOut;
+  static const Curve easeInOut = Curves.easeInOut;
+  static const Curve easeOutCubic = Curves.easeOutCubic;
+  static const Curve easeInOutCubic = Curves.easeInOutCubic;
+  static const Curve easeOutBack = Curves.easeOutBack;
+  static const Curve easeInOutBack = Curves.easeInOutBack;
+  static const Curve bounceIn = Curves.bounceIn;
+  static const Curve bounceOut = Curves.bounceOut;
+
+  // Animation hierarchy - static properties instead of nested classes
+  static const Duration primaryDuration = slow;
+  static const Curve primaryCurve = easeOutCubic;
+  
+  static const Duration secondaryDuration = medium;
+  static const Curve secondaryCurve = easeOutCubic;
+  
+  static const Duration microDuration = fast;
+  static const Curve microCurve = easeOut;
+}
 
 class GymLoginPage extends ConsumerStatefulWidget {
   const GymLoginPage({super.key});
@@ -24,46 +60,68 @@ class _GymLoginPageState extends ConsumerState<GymLoginPage>
   late final AnimationController _fadeController;
   late final AnimationController _slideController;
   late final AnimationController _pulseController;
+  late final AnimationController _particleController;
 
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
   late final Animation<double> _pulseAnim;
 
+  final List<Particle> _particles = [];
+
   @override
   void initState() {
     super.initState();
 
+    // Initialize particles
+    _initParticles();
+
+    // Primary animation - page entrance
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: AppAnimation.primaryDuration,
     );
     _fadeAnim = CurvedAnimation(
       parent: _fadeController,
-      curve: Curves.easeOut,
+      curve: AppAnimation.primaryCurve,
     );
 
+    // Secondary animation - slide up
     _slideController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: AppAnimation.secondaryDuration,
     );
     _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.12),
+      begin: const Offset(0, 0.15),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _slideController,
-      curve: Curves.easeOutCubic,
+      curve: AppAnimation.secondaryCurve,
     ));
 
+    // Micro animation - subtle pulse for badge
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: AppAnimation.verySlow,
     )..repeat(reverse: true);
     _pulseAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _pulseController, curve: AppAnimation.easeInOut),
     );
 
-    _fadeController.forward();
-    _slideController.forward();
+    // Background animation - very slow ambient motion
+    _particleController = AnimationController(
+      vsync: this,
+      duration: AppAnimation.micro,
+    )..repeat();
+
+    // Staggered animations for smooth entrance
+    Future.delayed(AppAnimation.micro, () => _fadeController.forward());
+    Future.delayed(AppAnimation.fast, () => _slideController.forward());
+  }
+
+  void _initParticles() {
+    for (int i = 0; i < 30; i++) {
+      _particles.add(Particle.random());
+    }
   }
 
   @override
@@ -73,11 +131,16 @@ class _GymLoginPageState extends ConsumerState<GymLoginPage>
     _fadeController.dispose();
     _slideController.dispose();
     _pulseController.dispose();
+    _particleController.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Haptic feedback
+    HapticFeedback.lightImpact();
+    
     await ref.read(authStateProvider.notifier).login(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -94,146 +157,168 @@ class _GymLoginPageState extends ConsumerState<GymLoginPage>
       body: Stack(
         children: [
           // ── Background ─────────────────────────────────────────────────
-          _BackgroundDecoration(size: size),
+          RepaintBoundary(
+            child: _BackgroundDecoration(size: size),
+          ),
 
           SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: SlideTransition(
-                position: _slideAnim,
-                child: SingleChildScrollView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Top Badge ───────────────────────────────────
-                        _TopBadge(pulseAnim: _pulseAnim),
-
-                        const SizedBox(height: 36),
-
-                        // ── Headline ────────────────────────────────────
-                        const _Headline(),
-
-                        const SizedBox(height: 48),
-
-                        // ── Email ───────────────────────────────────────
-                        _GymTextField(
-                          controller: _emailController,
-                          label: 'Email Address',
-                          hint: 'you@example.com',
-                          icon: Icons.alternate_email_rounded,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          isFocused: _emailFocused,
-                          onFocusChange: (v) =>
-                              setState(() => _emailFocused = v),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Email is required';
-                            }
-                            if (!value.contains('@')) {
-                              return 'Enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Password ────────────────────────────────────
-                        _GymTextField(
-                          controller: _passwordController,
-                          label: 'Password',
-                          hint: '••••••••',
-                          icon: Icons.lock_outline_rounded,
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.done,
-                          isFocused: _passwordFocused,
-                          onFocusChange: (v) =>
-                              setState(() => _passwordFocused = v),
-                          onFieldSubmitted: (_) => _handleLogin(),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                              color: const Color(0xFF6B7280),
-                              size: 20,
+            child: RepaintBoundary(
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: RepaintBoundary(
+                  child: SlideTransition(
+                    position: _slideAnim,
+                    child: SingleChildScrollView(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── Top Badge ───────────────────────────────────
+                            RepaintBoundary(
+                              child: _TopBadge(pulseAnim: _pulseAnim),
                             ),
-                            onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Password is required';
-                            }
-                            if (value.length < 6) {
-                              return 'Minimum 6 characters';
-                            }
-                            return null;
-                          },
-                        ),
 
-                        const SizedBox(height: 12),
+                            const SizedBox(height: 40),
 
-                        // ── Forgot Password ─────────────────────────────
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              'Forgot password?',
-                              style: TextStyle(
-                                color: Color(0xFFFF6B35),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                            // ── Headline ────────────────────────────────────
+                            const _Headline(),
+
+                            const SizedBox(height: 52),
+
+                            // ── Email ───────────────────────────────────────
+                            RepaintBoundary(
+                              child: _GymTextField(
+                                controller: _emailController,
+                                label: 'Email Address',
+                                hint: 'you@example.com',
+                                icon: Icons.alternate_email_rounded,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                isFocused: _emailFocused,
+                                onFocusChange: (v) {
+                                  setState(() => _emailFocused = v);
+                                  if (v) HapticFeedback.lightImpact();
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Email is required';
+                                  }
+                                  if (!value.contains('@')) {
+                                    return 'Enter a valid email';
+                                  }
+                                  return null;
+                                },
                               ),
                             ),
-                          ),
+
+                            const SizedBox(height: 24),
+
+                            // ── Password ────────────────────────────────────
+                            RepaintBoundary(
+                              child: _GymTextField(
+                                controller: _passwordController,
+                                label: 'Password',
+                                hint: '••••••••',
+                                icon: Icons.lock_outline_rounded,
+                                obscureText: _obscurePassword,
+                                textInputAction: TextInputAction.done,
+                                isFocused: _passwordFocused,
+                                onFocusChange: (v) {
+                                  setState(() => _passwordFocused = v);
+                                  if (v) HapticFeedback.lightImpact();
+                                },
+                                onFieldSubmitted: (_) => _handleLogin(),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    color: const Color(0xFF6B7280),
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    setState(() => _obscurePassword = !_obscurePassword);
+                                    HapticFeedback.lightImpact();
+                                  },
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Password is required';
+                                  }
+                                  if (value.length < 6) {
+                                    return 'Minimum 6 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // ── Forgot Password ─────────────────────────────
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text(
+                                  'Forgot password?',
+                                  style: TextStyle(
+                                    color: Color(0xFFFF6B35),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // ── Error Banner ────────────────────────────────
+                            if (authState.error != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 20),
+                                child: _ErrorBanner(message: authState.error!),
+                              ),
+
+                            const SizedBox(height: 40),
+
+                            // ── Sign In Button ──────────────────────────────
+                            RepaintBoundary(
+                              child: _SignInButton(
+                                isLoading: authState.isLoading,
+                                onPressed: _handleLogin,
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // ── Register Link ───────────────────────────────
+                            _RegisterLink(
+                              onTap: () => context.push(AppRoutes.register),
+                            ),
+
+                            const SizedBox(height: 32),
+
+                            // ── Divider ─────────────────────────────────────
+                            const _OrDivider(),
+
+                            const SizedBox(height: 32),
+
+                            // ── Stats Row ───────────────────────────────────
+                            const _StatsRow(),
+
+                            const SizedBox(height: 24),
+                          ],
                         ),
-
-                        // ── Error Banner ────────────────────────────────
-                        if (authState.error != null) ...[
-                          const SizedBox(height: 20),
-                          _ErrorBanner(message: authState.error!),
-                        ],
-
-                        const SizedBox(height: 36),
-
-                        // ── Sign In Button ──────────────────────────────
-                        _SignInButton(
-                          isLoading: authState.isLoading,
-                          onPressed: _handleLogin,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Register Link ───────────────────────────────
-                        // ✅ ADDED: navigates to GymRegisterPage
-                        _RegisterLink(
-                          onTap: () => context.push(AppRoutes.register),
-                        ),
-
-                        const SizedBox(height: 32),
-
-                        // ── Divider ─────────────────────────────────────
-                        const _OrDivider(),
-
-                        const SizedBox(height: 32),
-
-                        // ── Stats Row ───────────────────────────────────
-                        const _StatsRow(),
-
-                        const SizedBox(height: 24),
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -256,38 +341,107 @@ class _BackgroundDecoration extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // ── Animated Gradient Orbs ─────────────────────────────
         Positioned(
-          top: -80,
-          right: -60,
-          child: Container(
-            width: 280,
-            height: 280,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(colors: [
-                const Color(0xFFFF6B35).withOpacity(0.18),
-                Colors.transparent,
-              ]),
-            ),
+          top: -100,
+          right: -80,
+          child: _AnimatedOrb(
+            size: 320,
+            color: const Color(0xFFFF6B35),
+            opacity: 0.22,
           ),
         ),
         Positioned(
-          bottom: -100,
-          left: -80,
-          child: Container(
-            width: 320,
-            height: 320,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(colors: [
-                const Color(0xFF3B82F6).withOpacity(0.12),
-                Colors.transparent,
-              ]),
-            ),
+          bottom: -120,
+          left: -100,
+          child: _AnimatedOrb(
+            size: 380,
+            color: const Color(0xFF3B82F6),
+            opacity: 0.15,
           ),
         ),
+        Positioned(
+          top: size.height * 0.4,
+          left: -60,
+          child: _AnimatedOrb(
+            size: 200,
+            color: const Color(0xFF8B5CF6),
+            opacity: 0.1,
+          ),
+        ),
+        
+        // ── Grid Background ───────────────────────────────────
         CustomPaint(size: size, painter: _GridPainter()),
       ],
+    );
+  }
+}
+
+// ── Animated Orb ────────────────────────────────────────────────────────────
+
+class _AnimatedOrb extends StatefulWidget {
+  final double size;
+  final Color color;
+  final double opacity;
+  const _AnimatedOrb({
+    required this.size,
+    required this.color,
+    required this.opacity,
+  });
+
+  @override
+  State<_AnimatedOrb> createState() => _AnimatedOrbState();
+}
+
+class _AnimatedOrbState extends State<_AnimatedOrb>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: AppAnimation.verySlow * 3, // Much slower for subtle effect
+    )..repeat(reverse: true);
+    _scale = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: AppAnimation.easeInOut),
+    );
+    _opacity = Tween<double>(begin: widget.opacity * 0.8, end: widget.opacity)
+        .animate(CurvedAnimation(parent: _controller, curve: AppAnimation.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scale.value,
+          child: Opacity(
+            opacity: _opacity.value,
+            child: Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [
+                  widget.color.withOpacity(_opacity.value),
+                  Colors.transparent,
+                ]),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -296,9 +450,9 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.025)
+      ..color = Colors.white.withOpacity(0.02)
       ..strokeWidth = 1;
-    const spacing = 48.0;
+    const spacing = 56.0;
     for (double x = 0; x < size.width; x += spacing) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
     }
@@ -315,7 +469,9 @@ class _GridPainter extends CustomPainter {
 
 class _TopBadge extends StatelessWidget {
   final Animation<double> pulseAnim;
-  const _TopBadge({required this.pulseAnim});
+  const _TopBadge({
+    required this.pulseAnim,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -324,10 +480,10 @@ class _TopBadge extends StatelessWidget {
         ScaleTransition(
           scale: pulseAnim,
           child: Container(
-            width: 56,
-            height: 56,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -335,49 +491,58 @@ class _TopBadge extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFF6B35).withOpacity(0.4),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  color: const Color(0xFFFF6B35).withOpacity(0.5),
+                  blurRadius: 28,
+                  offset: const Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: const Color(0xFFFF6B35).withOpacity(0.3),
+                  blurRadius: 40,
+                  offset: const Offset(0, 0),
                 ),
               ],
             ),
             child: const Icon(Icons.fitness_center_rounded,
-                color: Colors.white, size: 28),
+                color: Colors.white, size: 32),
           ),
         ),
-        const SizedBox(width: 14),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'GYM COACH',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 2.5,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(top: 3),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B35).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(4),
-                border:
-                    Border.all(color: const Color(0xFFFF6B35).withOpacity(0.3)),
-              ),
-              child: const Text(
-                'PRO PLATFORM',
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'GYM COACH',
                 style: TextStyle(
-                  color: Color(0xFFFF6B35),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2.8,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B35).withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: const Color(0xFFFF6B35).withOpacity(0.4),
+                    width: 1,
+                  ),
+                ),
+                child: const Text(
+                  'PRO PLATFORM',
+                  style: TextStyle(
+                    color: Color(0xFFFF6B35),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -396,7 +561,7 @@ class _Headline extends StatelessWidget {
       children: [
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
-            colors: [Color(0xFFFFFFFF), Color(0xFFAAAAAA)],
+            colors: [Color(0xFFFFFFFF), Color(0xFFBBBBBB)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ).createShader(bounds),
@@ -404,10 +569,10 @@ class _Headline extends StatelessWidget {
             'PUSH YOUR',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 38,
+              fontSize: 42,
               fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-              height: 1.1,
+              letterSpacing: -1,
+              height: 1.15,
             ),
           ),
         ),
@@ -419,20 +584,21 @@ class _Headline extends StatelessWidget {
             'LIMITS.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 38,
+              fontSize: 42,
               fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-              height: 1.1,
+              letterSpacing: -1,
+              height: 1.15,
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         const Text(
           'Sign in to access your coaching dashboard\nand track your performance.',
           style: TextStyle(
             color: Color(0xFF9CA3AF),
-            fontSize: 14,
+            fontSize: 15,
             height: 1.6,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -475,87 +641,282 @@ class _GymTextField extends StatefulWidget {
   State<_GymTextField> createState() => _GymTextFieldState();
 }
 
-class _GymTextFieldState extends State<_GymTextField> {
+class _GymTextFieldState extends State<_GymTextField>
+    with SingleTickerProviderStateMixin {
+  bool _hasText = false;
+  String? _errorText;
+  late AnimationController _shakeController;
+  late Animation<double> _shakeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTextChanged);
+    
+    // Shake animation for errors
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: AppAnimation.medium,
+    );
+    _shakeAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _shakeController, curve: AppAnimation.easeOutBack),
+    );
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    _shakeController.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    final hasText = widget.controller.text.isNotEmpty;
+    if (hasText != _hasText) {
+      setState(() => _hasText = hasText);
+    }
+    // Trigger shake when error appears
+    if (_errorText != null && hasText) {
+      _shakeController.forward().then((_) => _shakeController.reverse());
+    }
+  }
+
+  @override
+  void didUpdateWidget(_GymTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Trigger shake when error state changes
+    if (_errorText != null && oldWidget.isFocused && !widget.isFocused) {
+      _shakeController.forward().then((_) => _shakeController.reverse());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hasError = _errorText != null;
+    final borderRadius = BorderRadius.circular(18);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ALL-CAPS label
-        Text(
-          widget.label.toUpperCase(),
-          style: const TextStyle(
-            color: Color(0xFF6B7280),
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.4,
+        // Floating label with fluid animation
+        AnimatedOpacity(
+          duration: AppAnimation.microDuration,
+          curve: AppAnimation.microCurve,
+          opacity: widget.isFocused || _hasText ? 1.0 : 0.7,
+          child: Row(
+            children: [
+              Text(
+                widget.label.toUpperCase(),
+                style: TextStyle(
+                  color: widget.isFocused
+                      ? const Color(0xFFFF6B35)
+                      : hasError
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFF6B7280),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.6,
+                ),
+              ),
+              if (widget.obscureText && _hasText) ...[
+                const SizedBox(width: 8),
+                // Typing indicator with color transition
+                AnimatedDefaultTextStyle(
+                  duration: AppAnimation.microDuration,
+                  curve: AppAnimation.microCurve,
+                  style: TextStyle(
+                    color: widget.controller.text.length >= 6
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFF6B7280),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  child: Text('${widget.controller.text.length}/6+'),
+                ),
+              ],
+            ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
 
-        Focus(
-          onFocusChange: widget.onFocusChange,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: widget.isFocused
-                    ? const Color(0xFFFF6B35).withOpacity(0.7)
-                    : const Color(0xFF1F2937),
-                width: widget.isFocused ? 1.5 : 1,
+        // Shake animation wrapper
+        AnimatedBuilder(
+          animation: _shakeAnim,
+          builder: (context, child) {
+            return Transform.translate(
+              offset: Offset(
+                math.sin(_shakeAnim.value * math.pi * 4) * 8 * (1 - _shakeAnim.value),
+                0,
               ),
-              color: const Color(0xFF111827),
-              boxShadow: widget.isFocused
-                  ? [
-                      BoxShadow(
-                        color: const Color(0xFFFF6B35).withOpacity(0.08),
-                        blurRadius: 16,
-                        spreadRadius: 2,
+              child: Focus(
+                onFocusChange: widget.onFocusChange,
+                child: AnimatedContainer(
+                  duration: AppAnimation.secondaryDuration,
+                  curve: AppAnimation.secondaryCurve,
+                  decoration: BoxDecoration(
+                    borderRadius: borderRadius,
+                    // Gradient border on focus
+                    gradient: widget.isFocused
+                        ? LinearGradient(
+                            colors: [
+                              const Color(0xFFFF6B35),
+                              const Color(0xFFFF3B30),
+                              const Color(0xFFFF6B35),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          )
+                        : null,
+                    // Solid border for non-focused state
+                    border: widget.isFocused
+                        ? null
+                        : Border.all(
+                            color: hasError
+                                ? const Color(0xFFEF4444).withOpacity(0.6)
+                                : const Color(0xFF1F2937),
+                            width: 1.5,
+                          ),
+                    // Enhanced shadows with glow effect
+                    boxShadow: widget.isFocused
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFFF6B35).withOpacity(0.15),
+                              blurRadius: 24,
+                              spreadRadius: 0,
+                            ),
+                            BoxShadow(
+                              color: const Color(0xFFFF6B35).withOpacity(0.08),
+                              blurRadius: 48,
+                              spreadRadius: -8,
+                            ),
+                          ]
+                        : hasError
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFFEF4444).withOpacity(0.15),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                  ),
+                  child: Container(
+                    // Inner container with padding for gradient border
+                    padding: widget.isFocused ? const EdgeInsets.all(2) : EdgeInsets.zero,
+                    decoration: BoxDecoration(
+                      borderRadius: borderRadius,
+                      color: const Color(0xFF111827),
+                    ),
+                    child: TextFormField(
+                      controller: widget.controller,
+                      obscureText: widget.obscureText,
+                      keyboardType: widget.keyboardType,
+                      textInputAction: widget.textInputAction,
+                      onFieldSubmitted: widget.onFieldSubmitted,
+                      validator: (value) {
+                        final result = widget.validator?.call(value);
+                        setState(() => _errorText = result);
+                        if (result != null) {
+                          _shakeController.forward().then((_) => _shakeController.reverse());
+                        }
+                        return result;
+                      },
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.2,
                       ),
-                    ]
-                  : [],
-            ),
-            child: TextFormField(
-              controller: widget.controller,
-              obscureText: widget.obscureText,
-              keyboardType: widget.keyboardType,
-              textInputAction: widget.textInputAction,
-              onFieldSubmitted: widget.onFieldSubmitted,
-              validator: widget.validator,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w400,
-              ),
-              cursorColor: const Color(0xFFFF6B35),
-              decoration: InputDecoration(
-                hintText: widget.hint,
-                hintStyle:
-                    const TextStyle(color: Color(0xFF374151), fontSize: 15),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 12),
-                  child: Icon(
-                    widget.icon,
-                    color: widget.isFocused
-                        ? const Color(0xFFFF6B35)
-                        : const Color(0xFF4B5563),
-                    size: 20,
+                      cursorColor: widget.isFocused
+                          ? const Color(0xFFFF6B35)
+                          : const Color(0xFF6B7280),
+                      cursorWidth: 2.5,
+                      cursorHeight: 20,
+                      decoration: InputDecoration(
+                        hintText: widget.hint,
+                        hintStyle: TextStyle(
+                          color: const Color(0xFF374151).withOpacity(0.8),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        // Enhanced icon container with animation
+                        prefixIcon: AnimatedContainer(
+                          duration: AppAnimation.microDuration,
+                          curve: AppAnimation.microCurve,
+                          margin: const EdgeInsets.only(left: 6, right: 8, top: 8, bottom: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: widget.isFocused
+                                ? const Color(0xFFFF6B35).withOpacity(0.12)
+                                : hasError
+                                    ? const Color(0xFFEF4444).withOpacity(0.1)
+                                    : const Color(0xFF1F2937).withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: widget.isFocused
+                                  ? const Color(0xFFFF6B35).withOpacity(0.3)
+                                  : Colors.transparent,
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            widget.icon,
+                            color: widget.isFocused
+                                ? const Color(0xFFFF6B35)
+                                : hasError
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF6B7280),
+                            size: 20,
+                          ),
+                        ),
+                        prefixIconConstraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Success validation icon with pulse
+                            if (_hasText && !hasError)
+                              TweenAnimationBuilder<double>(
+                                duration: AppAnimation.slow,
+                                tween: Tween(begin: 0.8, end: 1.2),
+                                builder: (context, scale, child) {
+                                  return Transform.scale(
+                                    scale: scale,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Icon(
+                                        Icons.check_circle_rounded,
+                                        color: const Color(0xFF10B981),
+                                        size: 20,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            if (widget.suffixIcon != null) widget.suffixIcon!,
+                          ],
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        errorStyle: const TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 12,
+                          height: 0,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                      ),
+                    ),
                   ),
                 ),
-                prefixIconConstraints:
-                    const BoxConstraints(minWidth: 48, minHeight: 48),
-                suffixIcon: widget.suffixIcon,
-                border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                errorStyle: const TextStyle(
-                    color: Color(0xFFEF4444), fontSize: 12, height: 0),
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
@@ -564,35 +925,84 @@ class _GymTextFieldState extends State<_GymTextField> {
 
 // ── Error Banner ──────────────────────────────────────────────────────────
 
-class _ErrorBanner extends StatelessWidget {
+class _ErrorBanner extends StatefulWidget {
   final String message;
   const _ErrorBanner({required this.message});
 
   @override
+  State<_ErrorBanner> createState() => _ErrorBannerState();
+}
+
+class _ErrorBannerState extends State<_ErrorBanner>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _slideIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideIn = Tween<double>(begin: -1.0, end: 0.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEF4444).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Color(0xFFEF4444), size: 18),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Color(0xFFEF4444),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+    return SlideTransition(
+      position: Tween<Offset>(begin: const Offset(0, -0.5), end: Offset.zero)
+          .animate(_slideIn),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEF4444).withOpacity(0.12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: const Color(0xFFEF4444).withOpacity(0.4),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFEF4444).withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.error_outline_rounded,
+                  color: Color(0xFFEF4444), size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.message,
+                style: const TextStyle(
+                  color: Color(0xFFEF4444),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -611,22 +1021,33 @@ class _SignInButton extends StatefulWidget {
 
 class _SignInButtonState extends State<_SignInButton>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _hoverController;
+  late final AnimationController _pressController;
   late final Animation<double> _scaleAnim;
+  late final Animation<double> _shadowAnim;
+  late final Animation<double> _rippleAnim;
   bool _isPressed = false;
 
   @override
   void initState() {
     super.initState();
-    _hoverController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 120));
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.97).animate(
-        CurvedAnimation(parent: _hoverController, curve: Curves.easeOut));
+    _pressController = AnimationController(
+      vsync: this,
+      duration: AppAnimation.microDuration,
+    );
+    _scaleAnim = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _pressController, curve: AppAnimation.microCurve),
+    );
+    _shadowAnim = Tween<double>(begin: 1.0, end: 0.7).animate(
+      CurvedAnimation(parent: _pressController, curve: AppAnimation.microCurve),
+    );
+    _rippleAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _pressController, curve: AppAnimation.easeOut),
+    );
   }
 
   @override
   void dispose() {
-    _hoverController.dispose();
+    _pressController.dispose();
     super.dispose();
   }
 
@@ -637,30 +1058,32 @@ class _SignInButtonState extends State<_SignInButton>
       child: GestureDetector(
         onTapDown: (_) {
           setState(() => _isPressed = true);
-          _hoverController.forward();
+          _pressController.forward();
+          HapticFeedback.lightImpact();
         },
         onTapUp: (_) {
           setState(() => _isPressed = false);
-          _hoverController.reverse();
+          _pressController.reverse();
           if (!widget.isLoading) widget.onPressed();
         },
         onTapCancel: () {
           setState(() => _isPressed = false);
-          _hoverController.reverse();
+          _pressController.reverse();
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: AppAnimation.secondaryDuration,
+          curve: AppAnimation.secondaryCurve,
           width: double.infinity,
-          height: 56,
+          height: 58,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: widget.isLoading
                   ? [
-                      const Color(0xFFFF6B35).withOpacity(0.5),
-                      const Color(0xFFFF3B30).withOpacity(0.5),
+                      const Color(0xFFFF6B35).withOpacity(0.6),
+                      const Color(0xFFFF3B30).withOpacity(0.6),
                     ]
                   : [
                       const Color(0xFFFF6B35),
@@ -668,40 +1091,73 @@ class _SignInButtonState extends State<_SignInButton>
                     ],
             ),
             boxShadow: _isPressed || widget.isLoading
-                ? []
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFFF6B35).withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
                 : [
                     BoxShadow(
-                      color: const Color(0xFFFF6B35).withOpacity(0.45),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
+                      color: const Color(0xFFFF6B35).withOpacity(0.5),
+                      blurRadius: 28,
+                      offset: const Offset(0, 12),
+                    ),
+                    BoxShadow(
+                      color: const Color(0xFFFF6B35).withOpacity(0.3),
+                      blurRadius: 48,
+                      offset: const Offset(0, 0),
                     ),
                   ],
           ),
-          child: Center(
-            child: widget.isLoading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2.5, color: Colors.white),
-                  )
-                : const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'SIGN IN',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 2,
+          child: Stack(
+            children: [
+              // Ripple effect
+              if (_isPressed)
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _rippleAnim,
+                    builder: (context, child) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          color: Colors.white.withOpacity(0.1 * (1 - _rippleAnim.value)),
                         ),
-                      ),
-                      SizedBox(width: 10),
-                      Icon(Icons.arrow_forward_rounded,
-                          color: Colors.white, size: 18),
-                    ],
+                      );
+                    },
                   ),
+                ),
+              // Button content
+              Center(
+                child: widget.isLoading
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'SIGN IN',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2.2,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Icon(Icons.arrow_forward_rounded,
+                              color: Colors.white, size: 20),
+                        ],
+                      ),
+              ),
+            ],
           ),
         ),
       ),
@@ -712,34 +1168,70 @@ class _SignInButtonState extends State<_SignInButton>
 // ── Register Link ─────────────────────────────────────────────────────────
 // ✅ ADDED — takes user to registration page
 
-class _RegisterLink extends StatelessWidget {
+class _RegisterLink extends StatefulWidget {
   final VoidCallback onTap;
   const _RegisterLink({required this.onTap});
+
+  @override
+  State<_RegisterLink> createState() => _RegisterLinkState();
+}
+
+class _RegisterLinkState extends State<_RegisterLink>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _scale = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: GestureDetector(
-        onTap: onTap,
-        child: RichText(
-          text: const TextSpan(
-            children: [
-              TextSpan(
-                text: "Don't have an account? ",
-                style: TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 14,
+        onTapDown: (_) => _controller.forward(),
+        onTapUp: (_) {
+          _controller.reverse();
+          widget.onTap();
+        },
+        onTapCancel: () => _controller.reverse(),
+        child: ScaleTransition(
+          scale: _scale,
+          child: RichText(
+            text: const TextSpan(
+              children: [
+                TextSpan(
+                  text: "Don't have an account? ",
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: 'Sign Up',
-                style: TextStyle(
-                  color: Color(0xFFFF6B35),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
+                TextSpan(
+                  text: 'Sign Up',
+                  style: TextStyle(
+                    color: Color(0xFFFF6B35),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -830,20 +1322,20 @@ class _StatItem extends StatelessWidget {
               value,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
+                letterSpacing: -0.8,
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             label.toUpperCase(),
             style: const TextStyle(
               color: Color(0xFF4B5563),
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.2,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
             ),
           ),
         ],
@@ -857,8 +1349,57 @@ class _StatDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 1,
-      height: 36,
-      color: const Color(0xFF1F2937),
+      height: 40,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            const Color(0xFF1F2937),
+            Colors.transparent,
+          ],
+        ),
+      ),
     );
+  }
+}
+
+// ── Particle Class for Background Animation ─────────────────────────────────
+
+class Particle {
+  double x;
+  double y;
+  double size;
+  double speedX;
+  double speedY;
+  double opacity;
+
+  Particle({
+    required this.x,
+    required this.y,
+    required this.size,
+    required this.speedX,
+    required this.speedY,
+    required this.opacity,
+  });
+
+  factory Particle.random() {
+    final random = math.Random();
+    return Particle(
+      x: random.nextDouble() * 400,
+      y: random.nextDouble() * 800,
+      size: random.nextDouble() * 3 + 1,
+      speedX: (random.nextDouble() - 0.5) * 0.5,
+      speedY: (random.nextDouble() - 0.5) * 0.5,
+      opacity: random.nextDouble() * 0.3 + 0.1,
+    );
+  }
+
+  void update() {
+    x += speedX;
+    y += speedY;
+    if (x < 0 || x > 400) speedX *= -1;
+    if (y < 0 || y > 800) speedY *= -1;
   }
 }

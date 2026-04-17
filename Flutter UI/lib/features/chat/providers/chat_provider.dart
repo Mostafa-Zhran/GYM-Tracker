@@ -4,6 +4,7 @@ import 'package:Gym/features/chat/data/chat_repository.dart';
 import 'package:Gym/features/chat/data/chat_signalr_service.dart'; // ✅
 import 'package:Gym/features/chat/models/chat_message_model.dart';
 import 'package:Gym/features/chat/models/chat_pagination_model.dart';
+import 'package:Gym/features/chat/providers/unread_messages_provider.dart';
 import 'package:Gym/features/auth/providers/auth_provider.dart';
 
 // ── Chat State ────────────────────────────────────────────────────────────
@@ -86,8 +87,19 @@ class ChatNotifier extends StateNotifier<ChatState> {
     state = state.copyWith(isLoadingHistory: true, clearError: true);
     try {
       await Future.wait([_connectSignalR(), _loadPage(1)]);
+      
+      // Process initial messages to set unread counts
+      final currentUserId = _ref.read(authStateProvider).userId ?? '';
+      _ref.read(unreadMessagesProvider.notifier).processMessages(
+        state.messages,
+        currentUserId,
+      );
+      
       await _repository.markAsSeen(otherUserId: _otherUserId);
       _markLocalMessagesAsSeen();
+      
+      // Mark messages as read since we just opened the chat
+      _ref.read(unreadMessagesProvider.notifier).markAsRead(_otherUserId);
     } catch (e) {
       state = state.copyWith(
         isLoadingHistory: false,
@@ -208,8 +220,9 @@ class ChatNotifier extends StateNotifier<ChatState> {
       messages: [...state.messages, message],
     );
 
-    _repository.markAsSeen(otherUserId: _otherUserId);
-    _markLocalMessagesAsSeen();
+    // Unread count is now handled in SignalR service to avoid double counting
+    // _repository.markAsSeen(otherUserId: _otherUserId);
+    // _markLocalMessagesAsSeen();
   }
 
   void _handleMessageSent(ChatMessageModel message) {
