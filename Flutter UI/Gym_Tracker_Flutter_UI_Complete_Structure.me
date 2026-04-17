@@ -1,0 +1,284 @@
+# Gym Tracker Flutter UI - Complete Application Structure
+
+## Project Overview
+A Flutter-based gym tracking application with real-time chat functionality between coaches and trainees. Built with Riverpod for state management, GoRouter for navigation, Dio for network requests, and SignalR for real-time communication.
+
+## Technology Stack
+- **UI Framework**: Flutter
+- **State Management**: Riverpod (StateNotifierProvider, FutureProvider)
+- **Navigation**: GoRouter
+- **HTTP Client**: Dio
+- **Real-time Communication**: SignalR
+- **Secure Storage**: FlutterSecureStorage
+- **Date Formatting**: intl package
+
+## Core Configuration
+
+### AppConstants (`lib/core/constants/app_constants.dart`)
+- `todayWorkoutEndpoint`: API endpoint for fetching today's workout
+- `logWorkoutEndpoint`: API endpoint for logging completed workouts
+- `chatHistoryEndpoint`: API endpoint for fetching chat history (paginated)
+- `chatSeenEndpoint`: API endpoint for marking messages as seen
+- `tokenKey`: Secure storage key for authentication token
+- `signalRHubUrl`: SignalR hub URL for real-time chat
+
+### AppRouter (`lib/core/navigation/app_router.dart`)
+- Routes: login, coach/trainees, trainee/todayWorkout, trainee/logWorkout, chat
+- Navigation arguments: `ChatArgs(otherUserId, otherUserName)`
+
+## Features
+
+### Authentication Feature
+
+#### AuthState (`lib/features/auth/models/auth_state.dart`)
+- Properties: `isLoading`, `isAuthenticated`, `error`, `userId`, `userName`, `userRole`, `coachId`, `traineeId`
+- Roles: 'coach' or 'trainee'
+
+#### AuthRepository (`lib/features/auth/data/auth_repository.dart`)
+- Methods:
+  - `login(email, password)`: Authenticates user and stores token
+  - `logout()`: Clears token and SignalR connection
+  - `getToken()`: Retrieves stored token
+
+#### AuthProvider (`lib/features/auth/providers/auth_provider.dart`)
+- `authStateProvider`: StateNotifierProvider for auth state
+- `authRepositoryProvider`: Provider for AuthRepository
+
+#### LoginScreen (`lib/features/auth/screens/login_screen.dart`)
+- Features: Email/password form, loading states, error handling, entrance animations
+- Navigation: Redirects to coach/trainees or trainee/todayWorkout based on role
+
+### Coach Feature
+
+#### CoachRepository (`lib/features/coach/data/coach_repository.dart`)
+- Methods:
+  - `getTrainees()`: Fetches list of trainees assigned to coach
+
+#### CoachProvider (`lib/features/coach/providers/coach_provider.dart`)
+- `traineesProvider`: FutureProvider for trainees list
+- `traineeRepositoryProvider`: Provider for CoachRepository
+
+#### TraineesListScreen (`lib/features/coach/screens/trainees_list_screen.dart`)
+- Features: List of trainee cards, chat button per trainee, assign workout FAB, logout
+- Each trainee card includes: name, status (active/inactive), chat button
+- Chat navigation: Passes `ChatArgs` with trainee's ID and name
+
+### Trainee Feature
+
+#### TodayWorkoutModel & WorkoutLogModel (`lib/features/trainee/models/today_workout_model.dart`)
+- `TodayWorkoutModel`: title, description, scheduledDate, coachName, traineeName, log (optional)
+- `WorkoutLogModel`: completedAt, notes
+
+#### TraineeRepository (`lib/features/trainee/data/trainee_repository.dart`)
+- Methods:
+  - `getTodayWorkout()`: Fetches today's workout (returns null if 204 or no workout)
+  - `logWorkout(notes)`: Logs completed workout with timestamp
+
+#### TraineeProvider (`lib/features/trainee/providers/trainee_provider.dart`)
+- `todayWorkoutProvider`: FutureProvider for today's workout
+- `logWorkoutProvider`: StateNotifierProvider for logging workout
+- `LogWorkoutState`: isLoading, isSuccess, error
+- `LogWorkoutNotifier`: Handles workout logging with loading/success/error states
+
+#### TodayWorkoutScreen (`lib/features/trainee/screens/today_workout_screen.dart`)
+- Features: Displays workout details, status indicators, chat with coach button, log workout button
+- `_ChatCoachCard`: Navigates to chat with coach using `authStateProvider.coachId`
+- States: Loading, empty (no workout), workout content
+
+#### LogWorkoutScreen (`lib/features/trainee/screens/log_workout_screen.dart`)
+- Features: Notes text field, "How Was It" rating strip, save button
+- Form validation and error handling via snackbars
+
+### Chat Feature
+
+#### ChatMessageModel (`lib/features/chat/models/chat_message_model.dart`)
+- Properties: id, senderId, receiverId, content, timestamp, isSeen
+- Methods: fromJson, copyWith (for updating isSeen), == and hashCode
+
+#### ChatPaginationModel (`lib/features/chat/models/chat_pagination_model.dart`)
+- Properties: currentPage, pageSize, hasMore
+- Methods: initial constructor, copyWith
+
+#### MessageModel (`lib/features/chat/models/message_model.dart`)
+- Simpler model with: id, senderId, senderName, content, timestamp
+- Used for generic message display
+
+#### ChatRepository (`lib/features/chat/data/chat_repository.dart`)
+- Methods:
+  - `getChatHistory(otherUserId, pageNumber, pageSize)`: Fetches paginated messages
+    - Handles both raw array and wrapped object responses
+    - Reverses messages to oldest-first order
+  - `markAsSeen(otherUserId)`: Marks messages from user as read
+
+#### ChatSignalRService (`lib/features/chat/data/chat_signalr_service.dart`)
+- Singleton service for real-time chat
+- Methods:
+  - `connect(token)`: Establishes WebSocket connection with auto-reconnect
+  - `disconnect()`: Closes connection and clears callbacks
+  - `sendMessage(content, receiverId)`: Sends message via SignalR
+  - `sendTypingIndicator(receiverId)`: Sends typing event
+- Callbacks: onMessageReceived, onMessageSent, onUserTyping, onConnected, onDisconnected
+- Uses FlutterSecureStorage for token retrieval
+- Connection options: WebSockets transport, skipNegotiation, auto-reconnect with delays [0, 2000, 5000, 10000, 30000]
+
+#### ChatProvider (`lib/features/chat/providers/chat_provider.dart`)
+- `chatProvider`: StateNotifierProvider.family keyed by otherUserId
+- `ChatState`: messages, pagination, isLoadingHistory, isLoadingMore, isSending, isConnected, error
+- `ChatNotifier` methods:
+  - `initialize()`: Connects to SignalR, fetches initial history, marks as seen
+  - `loadMoreMessages()`: Loads older messages with pagination
+  - `sendMessage(content)`: Sends message with optimistic UI update (temporary message)
+  - `sendTypingIndicator()`: Emits typing event
+  - `_handleMessageReceived()`: SignalR callback for incoming messages
+  - `_handleMessageSent()`: SignalR callback for sent confirmation (replaces temp message)
+  - `_handleConnected()`: Updates connection status
+  - `_handleDisconnected()`: Handles disconnection
+  - `_markMessagesAsSeen()`: Marks unseen messages locally and on server
+- Disposal: Clears callbacks but keeps connection (connection closed on logout only)
+
+#### ChatTypingProvider (`lib/features/chat/providers/chat_typing_provider.dart`)
+- `chatTypingProvider`: StateNotifierProvider.family keyed by otherUserId
+- `TypingState`: isOtherUserTyping, otherUserId
+- `ChatTypingNotifier`:
+  - Listens to SignalR onUserTyping callback
+  - Shows typing indicator only for current conversation partner
+  - Auto-hides after 3 seconds of no typing events
+  - Uses Timer for auto-hide logic
+
+#### ChatScreen (`lib/features/chat/screens/chat_screen.dart`)
+- Features: Real-time chat interface with entrance animations
+- Components:
+  - `_ChatTopBar`: Shows other user name, connection status (Online/Connecting), back button
+  - `ChatListView`: Scrollable message list with infinite scroll, date separators, typing indicator
+  - `MessageInput`: Text field with send button, typing indicator with debounce
+  - States: Loading, empty, error banner
+- Auto-scroll: Scrolls to bottom on new message if near bottom or if user sent message
+- Initialization: Calls `chatProvider.notifier.initialize()` in postFrameCallback
+
+#### ChatListView (`lib/features/chat/widgets/chat_list_view.dart`)
+- Features:
+  - Infinite scroll (triggers load more when 150px from top)
+  - Date separators (Today, Yesterday, or formatted date)
+  - Typing indicator at bottom
+  - Loading more indicator at top
+- Uses CustomScrollView with Slivers for performance
+
+#### MessageBubble (`lib/features/chat/widgets/message_bubble.dart`)
+- Renders single message bubble
+- `isMe = true`: Right-aligned orange gradient bubble with shadow
+- `isMe = false`: Left-aligned dark bubble with border
+- Shows timestamp and seen status (double tick for seen, single for sent)
+- Rounded corners with asymmetric design (message tail)
+
+#### MessageInput (`lib/features/chat/widgets/message_input.dart`)
+- Features: Multi-line text field, animated send button, typing indicator with debounce
+- Static controller for external access
+- Typing debounce: Fires immediately on first keystroke, then throttles to once per 2 seconds
+- Send button: Animated scale on press, gradient when enabled, disabled state when empty
+
+#### TypingIndicator (`lib/features/chat/widgets/typing_indicator.dart`)
+- Animated "User is typing..." indicator with three bouncing dots
+- Staggered dot animation (150ms delay between dots)
+- Shows avatar and label above bouncing dots
+
+## UI Design Patterns
+
+### Color Scheme
+- Background: `0xFF0A0A0F` (very dark)
+- Primary gradient: `0xFFFF6B35` to `0xFFFF3B30` (orange-red)
+- Secondary dark: `0xFF111827`, `0xFF1C2333`, `0xFF1F2937`
+- Text: White, `0xFFE5E7EB`, `0xFF9CA3AF`, `0xFF6B7280`, `0xFF4B5563`
+- Success: `0xFF10B981` (green)
+- Error: `0xFFEF4444` (red)
+
+### Common UI Elements
+- Background decorations with gradient overlays
+- Rounded corners (typically 12-18px)
+- Shadows for depth (especially on buttons and cards)
+- Entrance animations (FadeTransition, SlideTransition)
+- Loading states with gradient containers and spinners
+- Error banners with red background
+- Empty states with icons and descriptive text
+
+### Animation Patterns
+- Fade and slide transitions for screen entrance
+- Scale animations on button press
+- Animated containers for state changes
+- Staggered animations for typing indicator dots
+- Smooth scroll to bottom on new messages
+
+## Data Flow
+
+### Authentication Flow
+1. User enters credentials on LoginScreen
+2. AuthRepository.login() calls API
+3. Token stored in FlutterSecureStorage
+4. AuthState updated with user info (userId, role, coachId/traineeId)
+5. Navigation redirects based on role
+
+### Chat Flow
+1. User navigates to ChatScreen with ChatArgs (otherUserId, otherUserName)
+2. ChatScreen initializes: connects SignalR, fetches history, marks as seen
+3. User types message: MessageInput emits typing indicator (debounced)
+4. User sends message: ChatNotifier adds temporary message optimistically, sends via SignalR
+5. SignalR confirms: onMessageSent replaces temp message with real message
+6. Other user receives: onMessageReceived adds message to their list
+7. Messages marked as seen when chat is opened
+
+### Workout Flow (Trainee)
+1. TodayWorkoutScreen loads via todayWorkoutProvider
+2. If workout exists, shows details and "Log This Workout" button
+3. User taps log: navigates to LogWorkoutScreen
+4. User enters notes and saves
+5. LogWorkoutNotifier calls TraineeRepository.logWorkout()
+6. Success: Shows snackbar, navigates back
+
+## API Integration
+
+### REST Endpoints
+- All use Dio with authorization header from secure storage
+- Handle 204 responses as empty/null
+- Support both raw array and wrapped object responses
+
+### SignalR Hub
+- WebSocket-based real-time communication
+- Methods: SendMessage, SendTypingIndicator
+- Events: ReceiveMessage, MessageSent, UserTyping, Connected, Disconnected
+- Auto-reconnect with exponential backoff
+- Connection shared across chat conversations (singleton)
+
+## State Management Patterns
+
+### Riverpod Providers
+- Family providers for per-conversation state (chatProvider, chatTypingProvider)
+- FutureProvider for read-only data (todayWorkoutProvider, traineesProvider)
+- StateNotifierProvider for mutable state (authStateProvider, logWorkoutProvider, chatProvider)
+- Singleton providers for services (authRepositoryProvider, chatSignalRServiceProvider)
+
+### State Updates
+- copyWith pattern for immutable state updates
+- Clear flags (clearError, clearSuccess) for state transitions
+- Optimistic UI updates for instant feedback
+- Local state updates before server confirmation
+
+## Navigation Patterns
+
+### GoRouter Usage
+- Type-safe navigation with extra parameters
+- Route constants in AppRoutes enum
+- Context.push() for forward navigation
+- Context.pop() for backward navigation
+- Post-frame callbacks for initialization after navigation
+
+## Security
+- JWT token stored in FlutterSecureStorage
+- Token used in Dio authorization header
+- Token passed to SignalR via accessTokenFactory
+- Token cleared on logout
+
+## Error Handling
+- Try-catch blocks in repository methods
+- Error state in providers
+- Error banners in UI
+- Snackbar notifications for user feedback
+- Graceful handling of 204/empty responses
